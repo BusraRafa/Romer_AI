@@ -4,6 +4,8 @@ from openai import OpenAI
 from dotenv import load_dotenv
 from openai import AuthenticationError as OpenAIAuthError
 from typing import Dict, List
+from context_get import get_context
+
 
 load_dotenv()
 
@@ -32,6 +34,8 @@ def generate_response(input_text: str, chat_history: List[Dict] = None) -> Dict:
 
     responses = {}
     try:
+            context = get_context(input_text)
+
             chatgpt_messages = [system_prompt]
             for chat in chat_history:
                 if chat.get("user", "").strip():
@@ -39,7 +43,8 @@ def generate_response(input_text: str, chat_history: List[Dict] = None) -> Dict:
                 if chat.get("chatgpt", "").strip():
                     chatgpt_messages.append({"role": "assistant", "content": chat["chatgpt"]})
 
-            chatgpt_messages.append({"role": "user", "content": input_text})
+            #chatgpt_messages.append({"role": "user","content": f"""Use the following context to answer the question:Context{context} Question: {input_text}"""})
+            chatgpt_messages.append({"role": "user","content": f"""Use the following context to answer the question:\nContext: {context}\n\nQuestion: {input_text}"""})
 
             client = OpenAI(api_key=openai_api_key, 
                             base_url=chatgpt_url)
@@ -50,7 +55,7 @@ def generate_response(input_text: str, chat_history: List[Dict] = None) -> Dict:
                 messages=chatgpt_messages
             )
             chatgpt_response = response_obj.choices[0].message.content if response_obj and response_obj.choices else "No response generated."
-        
+            
     except OpenAIAuthError:
             chatgpt_response = "Invalid OpenAI API key."
     except Exception as e:
@@ -59,7 +64,8 @@ def generate_response(input_text: str, chat_history: List[Dict] = None) -> Dict:
     return responses
 
 if __name__ == "__main__":
-    input_text = "can someone assist me here"
+    input_text = "How can I return a product?"
+    #can someone assist me here
 
    
     chat_history = [
